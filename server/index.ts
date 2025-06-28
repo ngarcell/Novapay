@@ -1,6 +1,20 @@
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+import {
+  createInvoice,
+  getInvoice,
+  generatePaymentAddress,
+  monitorPayment,
+  getCryptoPrices,
+  getExchangeRates,
+  calculateKESAmount,
+  getMerchantAnalytics,
+  validateMpesaNumber,
+  mpesaWebhook,
+  yellowcardWebhook,
+  nownodesWebhook,
+} from "./routes/payments";
 
 export function createServer() {
   const app = express();
