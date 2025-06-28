@@ -315,13 +315,11 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    formData.settlementPreference === "mpesa"
+                    selectedSettlement === "mpesa"
                       ? "border-primary bg-primary/10"
                       : "border-muted"
                   }`}
-                  onClick={() =>
-                    handleInputChange("settlementPreference", "mpesa")
-                  }
+                  onClick={() => setSelectedSettlement("mpesa")}
                 >
                   <div className="flex items-center space-x-3">
                     <Smartphone className="w-6 h-6 text-qpay-success" />
@@ -335,13 +333,11 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                 </div>
                 <div
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    formData.settlementPreference === "btc"
+                    selectedSettlement === "btc"
                       ? "border-primary bg-primary/10"
                       : "border-muted"
                   }`}
-                  onClick={() =>
-                    handleInputChange("settlementPreference", "btc")
-                  }
+                  onClick={() => setSelectedSettlement("btc")}
                 >
                   <div className="flex items-center space-x-3">
                     <Bitcoin className="w-6 h-6 text-qpay-warning" />
