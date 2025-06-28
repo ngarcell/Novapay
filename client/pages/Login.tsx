@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navigation from "../components/navigation";
 import { QpayButton } from "../components/ui/qpay-button";
 import { Input } from "../components/ui/input";
