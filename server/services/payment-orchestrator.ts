@@ -2,13 +2,14 @@ import { supabase } from "../config/supabase";
 import { nownodesService } from "./nownodes";
 import { yellowcardService } from "./yellowcard";
 import { mpesaService } from "./mpesa";
+import { lightningService } from "./lightning";
 import { aiFraudDetection } from "./ai-fraud-detection";
 import { aiDoubleSpendDetection } from "./ai-double-spend-detection";
 import { aiExchangeOptimization } from "./ai-exchange-optimization";
 import type { Invoice, Transaction } from "../config/supabase";
 
 export class PaymentOrchestrator {
-  // Create new invoice with AI fraud pre-screening
+  // Create new invoice with AI fraud pre-screening and Lightning support
   async createInvoice(invoiceData: {
     merchant_id: string;
     amount: number;
@@ -17,14 +18,15 @@ export class PaymentOrchestrator {
     customer_email?: string;
     customer_name?: string;
     store_id?: string;
-    settlement_preference: "mpesa" | "btc";
+    settlement_preference: "mpesa" | "btc" | "lightning";
+    payment_method?: "btc" | "usdt" | "lightning";
     expires_in_hours: number;
     request_metadata?: {
       ipAddress?: string;
       userAgent?: string;
       location?: { country: string; city: string };
     };
-  }): Promise<Invoice & { riskAssessment?: any }> {
+  }): Promise<Invoice & { riskAssessment?: any; lightningInvoice?: any }> {
     const invoiceId = "INV-" + Date.now().toString(36).toUpperCase();
     const expiresAt = new Date(
       Date.now() + invoiceData.expires_in_hours * 60 * 60 * 1000,
@@ -41,7 +43,7 @@ export class PaymentOrchestrator {
           customerEmail: invoiceData.customer_email,
           ipAddress: invoiceData.request_metadata.ipAddress,
           userAgent: invoiceData.request_metadata.userAgent,
-          paymentMethod: "BTC", // Default, will be updated when payment is made
+          paymentMethod: invoiceData.payment_method || "BTC",
           timestamp: new Date().toISOString(),
           location: invoiceData.request_metadata.location,
         });
@@ -58,6 +60,23 @@ export class PaymentOrchestrator {
       }
     }
 
+    // Generate Lightning invoice if requested
+    let lightningInvoice = null;
+    if (invoiceData.payment_method === "lightning") {
+      try {
+        lightningInvoice = await lightningService.createInvoice({
+          amount_msat: lightningService.constructor.satToMsat(
+            Math.floor(invoiceData.amount * 100000000),
+          ), // Convert USD to satoshis then msat
+          description: invoiceData.description,
+          expiry: invoiceData.expires_in_hours * 3600,
+        });
+      } catch (error) {
+        console.error("Failed to create Lightning invoice:", error);
+        throw new Error("Failed to create Lightning invoice");
+      }
+    }
+
     const { data, error } = await supabase
       .from("invoices")
       .insert({
@@ -67,6 +86,8 @@ export class PaymentOrchestrator {
         status: riskAssessment?.requiresManualReview
           ? "pending_review"
           : "pending",
+        lightning_payment_hash: lightningInvoice?.payment_hash,
+        lightning_payment_request: lightningInvoice?.payment_request,
       })
       .select()
       .single();
@@ -75,14 +96,58 @@ export class PaymentOrchestrator {
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
 
-    return { ...(data as Invoice), riskAssessment };
+    return {
+      ...(data as Invoice),
+      riskAssessment,
+      lightningInvoice,
+    };
   }
 
-  // Generate payment address for invoice
+  // Generate payment address for invoice (includes Lightning)
   async generatePaymentAddress(
     invoiceId: string,
-    cryptoCurrency: "BTC" | "USDT",
+    cryptoCurrency: "BTC" | "USDT" | "LIGHTNING",
   ): Promise<string> {
+    const { data: invoice, error: fetchError } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", invoiceId)
+      .single();
+
+    if (fetchError || !invoice) {
+      throw new Error("Invoice not found");
+    }
+
+    // For Lightning, return the BOLT11 invoice
+    if (cryptoCurrency === "LIGHTNING") {
+      if (invoice.lightning_payment_request) {
+        return invoice.lightning_payment_request;
+      }
+
+      // Generate Lightning invoice if not exists
+      const lightningInvoice = await lightningService.createInvoice({
+        amount_msat: lightningService.constructor.satToMsat(
+          Math.floor(invoice.amount * 100000000),
+        ),
+        description: invoice.description,
+        expiry: Math.floor(
+          (new Date(invoice.expires_at).getTime() - Date.now()) / 1000,
+        ),
+      });
+
+      // Update invoice with Lightning data
+      await supabase
+        .from("invoices")
+        .update({
+          lightning_payment_hash: lightningInvoice.payment_hash,
+          lightning_payment_request: lightningInvoice.payment_request,
+        })
+        .eq("id", invoiceId);
+
+      return lightningInvoice.payment_request;
+    }
+
+    // For BTC/USDT, generate traditional blockchain address
     let paymentAddress: string;
 
     if (cryptoCurrency === "BTC") {
@@ -104,7 +169,7 @@ export class PaymentOrchestrator {
     return paymentAddress;
   }
 
-  // Monitor payment for invoice with AI double-spend detection
+  // Monitor payment for invoice with Lightning and AI double-spend detection
   async monitorPayment(invoiceId: string): Promise<void> {
     const { data: invoice, error } = await supabase
       .from("invoices")
@@ -116,55 +181,161 @@ export class PaymentOrchestrator {
       throw new Error("Invoice not found");
     }
 
-    if (!invoice.payment_address) {
-      throw new Error("No payment address found for invoice");
+    // Monitor Lightning invoice if exists
+    if (invoice.lightning_payment_hash) {
+      this.monitorLightningPayment(invoiceId, invoice.lightning_payment_hash);
     }
 
-    // Start monitoring based on expected crypto type
-    const cryptoCurrency = "BTC"; // This should be determined from context
+    // Monitor traditional blockchain payments
+    if (invoice.payment_address) {
+      const cryptoCurrency = "BTC"; // This should be determined from context
 
-    const monitorResult =
-      cryptoCurrency === "BTC"
-        ? await nownodesService.monitorBitcoinTransaction(
-            invoice.payment_address,
-            invoice.amount,
-          )
-        : await nownodesService.monitorUSDTTransaction(
-            invoice.payment_address,
-            invoice.amount,
+      const monitorResult =
+        cryptoCurrency === "BTC"
+          ? await nownodesService.monitorBitcoinTransaction(
+              invoice.payment_address,
+              invoice.amount,
+            )
+          : await nownodesService.monitorUSDTTransaction(
+              invoice.payment_address,
+              invoice.amount,
+            );
+
+      if (monitorResult.txHash) {
+        // AI Double-Spend Detection
+        await aiDoubleSpendDetection.startMonitoring(
+          monitorResult.txHash,
+          invoiceId,
+          invoice.amount,
+          invoice.payment_address,
+          cryptoCurrency,
+        );
+
+        // Check for double-spend risks
+        const doubleSpendStatus =
+          await aiDoubleSpendDetection.getTransactionStatus(
+            monitorResult.txHash,
           );
 
-    if (monitorResult.txHash) {
-      // AI Double-Spend Detection
-      await aiDoubleSpendDetection.startMonitoring(
-        monitorResult.txHash,
-        invoiceId,
-        invoice.amount,
-        invoice.payment_address,
-        cryptoCurrency,
-      );
-
-      // Check for double-spend risks
-      const doubleSpendStatus =
-        await aiDoubleSpendDetection.getTransactionStatus(monitorResult.txHash);
-
-      // Only proceed if transaction is safe
-      if (
-        doubleSpendStatus.safeToAccept &&
-        monitorResult.status === "confirmed"
-      ) {
-        await this.processPayment(invoiceId, {
-          cryptoCurrency,
-          cryptoAmount: monitorResult.amount,
-          transactionHash: monitorResult.txHash,
-          confirmations: monitorResult.confirmations,
-        });
-      } else {
-        console.log(
-          `Transaction ${monitorResult.txHash} not safe to accept yet. Alerts:`,
-          doubleSpendStatus.alerts,
-        );
+        // Only proceed if transaction is safe
+        if (
+          doubleSpendStatus.safeToAccept &&
+          monitorResult.status === "confirmed"
+        ) {
+          await this.processPayment(invoiceId, {
+            cryptoCurrency,
+            cryptoAmount: monitorResult.amount,
+            transactionHash: monitorResult.txHash,
+            confirmations: monitorResult.confirmations,
+          });
+        } else {
+          console.log(
+            `Transaction ${monitorResult.txHash} not safe to accept yet. Alerts:`,
+            doubleSpendStatus.alerts,
+          );
+        }
       }
+    }
+  }
+
+  // Monitor Lightning payment specifically
+  private async monitorLightningPayment(
+    invoiceId: string,
+    paymentHash: string,
+  ): Promise<void> {
+    const checkPayment = async (): Promise<void> => {
+      try {
+        const status = await lightningService.getInvoiceStatus(paymentHash);
+
+        if (status && status.status === "paid") {
+          await this.processLightningPayment(invoiceId, status);
+          return;
+        }
+
+        // Continue monitoring if still pending
+        if (status && status.status === "pending") {
+          setTimeout(checkPayment, 5000); // Check every 5 seconds
+        }
+      } catch (error) {
+        console.error("Error monitoring Lightning payment:", error);
+      }
+    };
+
+    checkPayment();
+  }
+
+  // Process confirmed Lightning payment
+  async processLightningPayment(
+    invoiceId: string,
+    lightningInvoice: any,
+  ): Promise<void> {
+    const { data: invoice, error } = await supabase
+      .from("invoices")
+      .select("*, merchants(*)")
+      .eq("id", invoiceId)
+      .single();
+
+    if (error || !invoice) {
+      throw new Error("Invoice not found");
+    }
+
+    // Create transaction record for Lightning payment
+    const { data: transaction, error: txError } = await supabase
+      .from("transactions")
+      .insert({
+        invoice_id: invoiceId,
+        merchant_id: invoice.merchant_id,
+        type: "payment",
+        crypto_currency: "LIGHTNING",
+        crypto_amount:
+          lightningService.constructor.msatToSat(lightningInvoice.amount_msat) /
+          100000000, // Convert to BTC
+        fiat_amount: invoice.amount,
+        exchange_rate: 0, // Will be updated during conversion
+        blockchain_confirmations: 1, // Lightning is instant
+        transaction_hash: lightningInvoice.payment_hash,
+        lightning_preimage: lightningInvoice.preimage,
+        status: "processing",
+      })
+      .select()
+      .single();
+
+    if (txError) {
+      throw new Error(
+        `Failed to create Lightning transaction: ${txError.message}`,
+      );
+    }
+
+    // Update invoice status
+    await supabase
+      .from("invoices")
+      .update({
+        status: "paid",
+        transaction_hash: lightningInvoice.payment_hash,
+      })
+      .eq("id", invoiceId);
+
+    // Process settlement based on preference
+    if (invoice.settlement_preference === "mpesa") {
+      // Convert Lightning payment to KES settlement
+      const mockPaymentData = {
+        cryptoCurrency: "BTC" as const,
+        cryptoAmount:
+          lightningService.constructor.msatToSat(lightningInvoice.amount_msat) /
+          100000000,
+        transactionHash: lightningInvoice.payment_hash,
+        confirmations: 1,
+      };
+      await this.processKESSettlement(transaction.id, invoice, mockPaymentData);
+    } else {
+      await this.processBitcoinSettlement(transaction.id, invoice, {
+        cryptoCurrency: "BTC",
+        cryptoAmount:
+          lightningService.constructor.msatToSat(lightningInvoice.amount_msat) /
+          100000000,
+        transactionHash: lightningInvoice.payment_hash,
+        confirmations: 1,
+      });
     }
   }
 
@@ -380,6 +551,7 @@ export class PaymentOrchestrator {
     invoice: Invoice;
     transactions: Transaction[];
     status: "pending" | "processing" | "completed" | "failed";
+    lightningInvoice?: any;
   }> {
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
@@ -389,6 +561,14 @@ export class PaymentOrchestrator {
 
     if (invoiceError || !invoice) {
       throw new Error("Invoice not found");
+    }
+
+    // Get Lightning invoice status if applicable
+    let lightningInvoice = null;
+    if (invoice.lightning_payment_hash) {
+      lightningInvoice = await lightningService.getInvoiceStatus(
+        invoice.lightning_payment_hash,
+      );
     }
 
     const { data: transactions, error: txError } = await supabase
@@ -415,10 +595,11 @@ export class PaymentOrchestrator {
       invoice: invoice as Invoice,
       transactions: transactions as Transaction[],
       status,
+      lightningInvoice,
     };
   }
 
-  // Get merchant analytics
+  // Get merchant analytics (updated to include Lightning)
   async getMerchantAnalytics(
     merchantId: string,
     period: "24h" | "7d" | "30d" | "90d" = "7d",
@@ -430,6 +611,7 @@ export class PaymentOrchestrator {
     cryptoBreakdown: {
       btc: { volume: number; count: number };
       usdt: { volume: number; count: number };
+      lightning: { volume: number; count: number };
     };
     dailyData: Array<{
       date: string;
@@ -493,6 +675,14 @@ export class PaymentOrchestrator {
             .reduce((sum, tx) => sum + tx.fiat_amount, 0),
           count: completedTransactions.filter(
             (tx) => tx.crypto_currency === "USDT",
+          ).length,
+        },
+        lightning: {
+          volume: completedTransactions
+            .filter((tx) => tx.crypto_currency === "LIGHTNING")
+            .reduce((sum, tx) => sum + tx.fiat_amount, 0),
+          count: completedTransactions.filter(
+            (tx) => tx.crypto_currency === "LIGHTNING",
           ).length,
         },
       },
