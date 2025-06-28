@@ -158,30 +158,6 @@ const Dashboard = () => {
     setShowQRModal(true);
   };
 
-  const recentTransactions = [
-    {
-      id: "TX001",
-      amount: "$150.00",
-      crypto: "BTC",
-      status: "completed",
-      time: "2 mins ago",
-    },
-    {
-      id: "TX002",
-      amount: "$75.50",
-      crypto: "USDT",
-      status: "completed",
-      time: "15 mins ago",
-    },
-    {
-      id: "TX003",
-      amount: "$320.00",
-      crypto: "BTC",
-      status: "pending",
-      time: "1 hour ago",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
