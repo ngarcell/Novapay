@@ -4,6 +4,7 @@ import Navigation from "../components/navigation";
 import InvoiceForm from "../components/invoice-form";
 import InvoiceTable from "../components/invoice-table";
 import QRModal from "../components/qr-modal";
+import AnalyticsChart from "../components/analytics-chart";
 import { QpayButton } from "../components/ui/qpay-button";
 import {
   Card,
