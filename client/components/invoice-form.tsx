@@ -19,6 +19,7 @@ import {
   X,
   Shield,
   AlertTriangle,
+  Zap,
 } from "lucide-react";
 import { useSecureForm, SecureFormSchemas } from "@/hooks/use-secure-form";
 import { secureAPI, SecurityLogger } from "@/lib/secure-api";
@@ -32,6 +33,9 @@ interface InvoiceFormProps {
 const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
   const [selectedStore, setSelectedStore] = useState("");
   const [selectedSettlement, setSelectedSettlement] = useState("mpesa");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
+    "btc" | "usdt" | "lightning"
+  >("btc");
   const [selectedExpiry, setSelectedExpiry] = useState("24");
 
   // Initialize secure form with validation
@@ -84,6 +88,7 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
           amount: parseFloat(secureValues.amount),
           store: selectedStore,
           settlementPreference: selectedSettlement,
+          paymentMethod: selectedPaymentMethod,
           expiryDuration: selectedExpiry,
         };
 
@@ -91,6 +96,8 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
         const response = await secureAPI.post("/invoices", {
           merchant_id: "merchant_1", // This would come from auth context
           ...invoiceData,
+          payment_method: selectedPaymentMethod,
+          settlement_preference: selectedSettlement,
           expires_in_hours: parseInt(selectedExpiry),
         });
 
@@ -285,6 +292,67 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Payment Method Selection */}
+            <div>
+              <Label>Payment Method</Label>
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                <div
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    selectedPaymentMethod === "btc"
+                      ? "border-qpay-warning bg-qpay-warning/10"
+                      : "border-muted"
+                  }`}
+                  onClick={() => setSelectedPaymentMethod("btc")}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Bitcoin className="w-6 h-6 text-qpay-warning" />
+                    <div>
+                      <h3 className="font-semibold">Bitcoin</h3>
+                      <p className="text-xs text-muted-foreground">
+                        On-chain BTC
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    selectedPaymentMethod === "usdt"
+                      ? "border-qpay-success bg-qpay-success/10"
+                      : "border-muted"
+                  }`}
+                  onClick={() => setSelectedPaymentMethod("usdt")}
+                >
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="w-6 h-6 text-qpay-success" />
+                    <div>
+                      <h3 className="font-semibold">USDT</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Stablecoin
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    selectedPaymentMethod === "lightning"
+                      ? "border-qpay-secondary bg-qpay-secondary/10"
+                      : "border-muted"
+                  }`}
+                  onClick={() => setSelectedPaymentMethod("lightning")}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Zap className="w-6 h-6 text-qpay-secondary" />
+                    <div>
+                      <h3 className="font-semibold">Lightning</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Instant BTC
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Settlement Preference */}
