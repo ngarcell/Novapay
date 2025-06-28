@@ -14,6 +14,11 @@ import {
   mpesaWebhook,
   yellowcardWebhook,
   nownodesWebhook,
+  createLightningInvoice,
+  getLightningInvoiceStatus,
+  sendLightningPayment,
+  getLightningNodeInfo,
+  getLightningNetworkStats,
 } from "./routes/payments";
 import {
   analyzeFraudRisk,
@@ -71,6 +76,13 @@ export function createServer() {
   app.post("/api/ai/exchange/schedule", scheduleOptimalConversion);
   app.get("/api/ai/exchange/monitoring", getExchangeMonitoring);
   app.get("/api/ai/dashboard/:merchantId", getAIDashboardData);
+
+  // Lightning Network endpoints
+  app.post("/api/lightning/invoices", createLightningInvoice);
+  app.get("/api/lightning/invoices/:payment_hash", getLightningInvoiceStatus);
+  app.post("/api/lightning/payments", sendLightningPayment);
+  app.get("/api/lightning/node-info", getLightningNodeInfo);
+  app.get("/api/lightning/network-stats", getLightningNetworkStats);
 
   // Webhook endpoints
   app.post("/api/webhooks/mpesa", mpesaWebhook);

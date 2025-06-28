@@ -3,6 +3,7 @@ import { paymentOrchestrator } from "../services/payment-orchestrator";
 import { nownodesService } from "../services/nownodes";
 import { yellowcardService } from "../services/yellowcard";
 import { mpesaService } from "../services/mpesa";
+import { lightningService } from "../services/lightning";
 
 // Create new invoice
 export const createInvoice: RequestHandler = async (req, res) => {
@@ -78,21 +79,25 @@ export const generatePaymentAddress: RequestHandler = async (req, res) => {
     const { invoiceId } = req.params;
     const { crypto_currency } = req.body;
 
-    if (!crypto_currency || !["BTC", "USDT"].includes(crypto_currency)) {
+    if (
+      !crypto_currency ||
+      !["BTC", "USDT", "LIGHTNING"].includes(crypto_currency)
+    ) {
       return res.status(400).json({
-        error: "Invalid crypto_currency. Must be BTC or USDT",
+        error: "Invalid crypto_currency. Must be BTC, USDT, or LIGHTNING",
       });
     }
 
     const paymentAddress = await paymentOrchestrator.generatePaymentAddress(
       invoiceId,
-      crypto_currency,
+      crypto_currency as "BTC" | "USDT" | "LIGHTNING",
     );
 
     res.json({
       success: true,
       payment_address: paymentAddress,
       crypto_currency,
+      is_lightning: crypto_currency === "LIGHTNING",
     });
   } catch (error) {
     console.error("Error generating payment address:", error);
@@ -323,5 +328,125 @@ export const nownodesWebhook: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error processing Nownodes webhook:", error);
     res.status(500).json({ error: "Failed to process webhook" });
+  }
+};
+
+// Create Lightning invoice
+export const createLightningInvoice: RequestHandler = async (req, res) => {
+  try {
+    const { amount, description, expiry } = req.body;
+
+    if (!amount || !description) {
+      return res.status(400).json({
+        error: "Missing required fields: amount, description",
+      });
+    }
+
+    const invoice = await lightningService.createInvoice({
+      amount_msat: lightningService.constructor.satToMsat(
+        Math.floor(amount * 100000000),
+      ),
+      description,
+      expiry: expiry || 3600,
+    });
+
+    res.json({
+      success: true,
+      invoice,
+    });
+  } catch (error) {
+    console.error("Error creating Lightning invoice:", error);
+    res.status(500).json({
+      error: "Failed to create Lightning invoice",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+// Get Lightning invoice status
+export const getLightningInvoiceStatus: RequestHandler = async (req, res) => {
+  try {
+    const { payment_hash } = req.params;
+
+    const invoice = await lightningService.getInvoiceStatus(payment_hash);
+
+    if (!invoice) {
+      return res.status(404).json({
+        error: "Lightning invoice not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      invoice,
+    });
+  } catch (error) {
+    console.error("Error getting Lightning invoice status:", error);
+    res.status(500).json({
+      error: "Failed to get Lightning invoice status",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+// Send Lightning payment
+export const sendLightningPayment: RequestHandler = async (req, res) => {
+  try {
+    const { payment_request } = req.body;
+
+    if (!payment_request) {
+      return res.status(400).json({
+        error: "Missing required field: payment_request",
+      });
+    }
+
+    const payment = await lightningService.sendPayment(payment_request);
+
+    res.json({
+      success: true,
+      payment,
+    });
+  } catch (error) {
+    console.error("Error sending Lightning payment:", error);
+    res.status(500).json({
+      error: "Failed to send Lightning payment",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+// Get Lightning node info
+export const getLightningNodeInfo: RequestHandler = async (req, res) => {
+  try {
+    const nodeInfo = await lightningService.getNodeInfo();
+
+    res.json({
+      success: true,
+      node_info: nodeInfo,
+    });
+  } catch (error) {
+    console.error("Error getting Lightning node info:", error);
+    res.status(500).json({
+      error: "Failed to get Lightning node info",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+// Get Lightning network stats
+export const getLightningNetworkStats: RequestHandler = async (req, res) => {
+  try {
+    const stats = await lightningService.getNetworkStats();
+
+    res.json({
+      success: true,
+      network_stats: stats,
+    });
+  } catch (error) {
+    console.error("Error getting Lightning network stats:", error);
+    res.status(500).json({
+      error: "Failed to get Lightning network stats",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
