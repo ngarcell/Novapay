@@ -158,7 +158,7 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
           </QpayButton>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Security Notice */}
             {submitError && (
               <Alert variant="destructive">
