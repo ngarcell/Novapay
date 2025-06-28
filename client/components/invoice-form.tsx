@@ -159,10 +159,30 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Security Notice */}
+            {submitError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{submitError}</AlertDescription>
+              </Alert>
+            )}
+
+            {remainingSubmissions < 5 && (
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  Rate limit warning: {remainingSubmissions} submissions
+                  remaining
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Amount and Currency */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="amount">Amount</Label>
+                <Label htmlFor="amount">
+                  Amount <span className="text-red-500">*</span>
+                </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -170,14 +190,18 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                     type="number"
                     step="0.01"
                     placeholder="100.00"
-                    value={formData.amount}
-                    onChange={(e) =>
-                      handleInputChange("amount", e.target.value)
-                    }
-                    className="pl-10"
+                    {...getFieldProps("amount")}
+                    className={`pl-10 ${
+                      errors.amount && touched.amount
+                        ? "border-red-500"
+                        : "border-input"
+                    }`}
                     required
                   />
                 </div>
+                {errors.amount && touched.amount && (
+                  <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="currency">Currency</Label>
