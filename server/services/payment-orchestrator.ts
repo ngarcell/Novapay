@@ -2,6 +2,9 @@ import { supabase } from "../config/supabase";
 import { nownodesService } from "./nownodes";
 import { yellowcardService } from "./yellowcard";
 import { mpesaService } from "./mpesa";
+import { aiFraudDetection } from "./ai-fraud-detection";
+import { aiDoubleSpendDetection } from "./ai-double-spend-detection";
+import { aiExchangeOptimization } from "./ai-exchange-optimization";
 import type { Invoice, Transaction } from "../config/supabase";
 
 export class PaymentOrchestrator {
