@@ -37,6 +37,7 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
   // Initialize secure form with validation
   const {
     getFieldProps,
+    setFieldValue,
     handleSubmit,
     isSubmitting,
     isValid,
