@@ -93,24 +93,31 @@ const Dashboard = () => {
     },
   ]);
 
+  const totalVolume = invoices
+    .filter((inv) => inv.status === "paid")
+    .reduce((sum, inv) => sum + inv.amount, 0);
+  const pendingCount = invoices.filter(
+    (inv) => inv.status === "pending",
+  ).length;
+
   const stats = [
     {
       title: "Total Volume",
-      value: "$20,680",
+      value: `$${totalVolume.toLocaleString()}`,
       change: "+12.5%",
       icon: <TrendingUp className="w-5 h-5" />,
       color: "text-qpay-success",
     },
     {
-      title: "Transactions",
-      value: "245",
+      title: "Invoices",
+      value: invoices.length.toString(),
       change: "+8.2%",
-      icon: <BarChart3 className="w-5 h-5" />,
+      icon: <FileText className="w-5 h-5" />,
       color: "text-primary",
     },
     {
       title: "Pending",
-      value: "3",
+      value: pendingCount.toString(),
       change: "-2",
       icon: <Clock className="w-5 h-5" />,
       color: "text-qpay-warning",
@@ -123,6 +130,33 @@ const Dashboard = () => {
       color: "text-qpay-secondary",
     },
   ];
+
+  const handleCreateInvoice = (newInvoice: any) => {
+    setInvoices((prev) => [newInvoice, ...prev]);
+  };
+
+  const handleViewInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    // Could open a detailed view modal
+  };
+
+  const handleEditInvoice = (invoice: any) => {
+    // Implementation for editing invoice
+    console.log("Edit invoice:", invoice.id);
+  };
+
+  const handleDeleteInvoice = (invoiceId: string) => {
+    setInvoices((prev) =>
+      prev.map((inv) =>
+        inv.id === invoiceId ? { ...inv, status: "cancelled" as const } : inv,
+      ),
+    );
+  };
+
+  const handleGenerateQR = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setShowQRModal(true);
+  };
 
   const recentTransactions = [
     {
