@@ -29,6 +29,53 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [invoices, setInvoices] = useState([
+    {
+      id: "INV-001",
+      amount: 150.0,
+      currency: "USD",
+      description: "Website development services",
+      customerEmail: "client@example.com",
+      customerName: "John Client",
+      store: "store1",
+      settlementPreference: "mpesa" as const,
+      status: "paid" as const,
+      createdAt: "2024-01-15T10:00:00Z",
+      expiresAt: "2024-01-16T10:00:00Z",
+      reference: "WEB-001",
+    },
+    {
+      id: "INV-002",
+      amount: 75.5,
+      currency: "USD",
+      description: "Product consultation",
+      customerEmail: "customer@test.com",
+      customerName: "Jane Customer",
+      store: "store2",
+      settlementPreference: "btc" as const,
+      status: "pending" as const,
+      createdAt: "2024-01-14T15:30:00Z",
+      expiresAt: "2024-01-15T15:30:00Z",
+    },
+    {
+      id: "INV-003",
+      amount: 320.0,
+      currency: "USD",
+      description: "Monthly subscription",
+      customerEmail: "sub@company.com",
+      customerName: "Business Corp",
+      store: "store1",
+      settlementPreference: "mpesa" as const,
+      status: "expired" as const,
+      createdAt: "2024-01-13T09:00:00Z",
+      expiresAt: "2024-01-14T09:00:00Z",
+      reference: "SUB-001",
+    },
+  ]);
+
   const [stores] = useState([
     {
       id: 1,
