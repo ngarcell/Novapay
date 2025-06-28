@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Payment from "./pages/Payment";
+import PaymentRequest from "./pages/PaymentRequest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -89,6 +90,7 @@ const App = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/pay" element={<Payment />} />
             <Route path="/pay/:invoiceId" element={<Payment />} />
+            <Route path="/request/:invoiceId" element={<PaymentRequest />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
