@@ -15,6 +15,18 @@ import {
   yellowcardWebhook,
   nownodesWebhook,
 } from "./routes/payments";
+import {
+  analyzeFraudRisk,
+  getFraudInsights,
+  monitorDoubleSpend,
+  getDoubleSpendStatus,
+  getDoubleSpendDashboard,
+  optimizeExchangeRate,
+  predictExchangeRates,
+  scheduleOptimalConversion,
+  getExchangeMonitoring,
+  getAIDashboardData,
+} from "./routes/ai-services";
 
 export function createServer() {
   const app = express();
