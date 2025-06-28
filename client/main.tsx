@@ -1,4 +1,5 @@
 import "./global.css";
+import React from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot } from "react-dom/client";
@@ -33,35 +34,39 @@ const queryClient = new QueryClient({
 
 // Initialize security configuration
 const initializeSecurity = () => {
-  // Generate initial CSRF token
-  CSRFTokenManager.generateToken();
+  try {
+    // Generate initial CSRF token
+    CSRFTokenManager.generateToken();
 
-  // Log security initialization
-  secureLog("info", "Security configuration initialized", {
-    environment: envConfig.environment,
-    features: envConfig.features,
-  });
+    // Log security initialization
+    secureLog("info", "Security configuration initialized", {
+      environment: envConfig.environment,
+      features: envConfig.features,
+    });
 
-  // Setup session timeout
-  let sessionTimeout: NodeJS.Timeout;
-  const resetSessionTimeout = () => {
-    clearTimeout(sessionTimeout);
-    sessionTimeout = setTimeout(() => {
-      secureLog("warn", "Session timeout reached");
-      // Clear sensitive data and redirect to login
-      sessionStorage.clear();
-      window.location.href = "/login";
-    }, envConfig.limits.sessionTimeout);
-  };
+    // Setup session timeout
+    let sessionTimeout: NodeJS.Timeout;
+    const resetSessionTimeout = () => {
+      clearTimeout(sessionTimeout);
+      sessionTimeout = setTimeout(() => {
+        secureLog("warn", "Session timeout reached");
+        // Clear sensitive data and redirect to login
+        sessionStorage.clear();
+        window.location.href = "/login";
+      }, envConfig.limits.sessionTimeout);
+    };
 
-  // Reset timeout on user activity
-  ["mousedown", "mousemove", "keypress", "scroll", "touchstart"].forEach(
-    (event) => {
-      document.addEventListener(event, resetSessionTimeout, true);
-    }
-  );
+    // Reset timeout on user activity
+    ["mousedown", "mousemove", "keypress", "scroll", "touchstart"].forEach(
+      (event) => {
+        document.addEventListener(event, resetSessionTimeout, true);
+      },
+    );
 
-  resetSessionTimeout();
+    resetSessionTimeout();
+  } catch (error) {
+    console.error("Security initialization failed:", error);
+  }
 };
 
 const App = () => {
@@ -76,20 +81,21 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/onboarding" element={<MerchantOnboarding />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/pay" element={<Payment />} />
-          <Route path="/pay/:invoiceId" element={<Payment />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/onboarding" element={<MerchantOnboarding />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/pay" element={<Payment />} />
+            <Route path="/pay/:invoiceId" element={<Payment />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 createRoot(document.getElementById("root")!).render(<App />);
