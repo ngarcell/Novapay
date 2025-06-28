@@ -8,7 +8,7 @@ import { aiExchangeOptimization } from "./ai-exchange-optimization";
 import type { Invoice, Transaction } from "../config/supabase";
 
 export class PaymentOrchestrator {
-  // Create new invoice
+  // Create new invoice with AI fraud pre-screening
   async createInvoice(invoiceData: {
     merchant_id: string;
     amount: number;
@@ -19,11 +19,44 @@ export class PaymentOrchestrator {
     store_id?: string;
     settlement_preference: "mpesa" | "btc";
     expires_in_hours: number;
-  }): Promise<Invoice> {
+    request_metadata?: {
+      ipAddress?: string;
+      userAgent?: string;
+      location?: { country: string; city: string };
+    };
+  }): Promise<Invoice & { riskAssessment?: any }> {
     const invoiceId = "INV-" + Date.now().toString(36).toUpperCase();
     const expiresAt = new Date(
       Date.now() + invoiceData.expires_in_hours * 60 * 60 * 1000,
     ).toISOString();
+
+    // AI Fraud Detection - Pre-screening
+    let riskAssessment = null;
+    if (invoiceData.request_metadata) {
+      try {
+        riskAssessment = await aiFraudDetection.analyzeTransaction({
+          amount: invoiceData.amount,
+          currency: invoiceData.currency,
+          merchantId: invoiceData.merchant_id,
+          customerEmail: invoiceData.customer_email,
+          ipAddress: invoiceData.request_metadata.ipAddress,
+          userAgent: invoiceData.request_metadata.userAgent,
+          paymentMethod: "BTC", // Default, will be updated when payment is made
+          timestamp: new Date().toISOString(),
+          location: invoiceData.request_metadata.location,
+        });
+
+        // Block high-risk transactions
+        if (riskAssessment.blockTransaction) {
+          throw new Error(
+            `Transaction blocked due to high fraud risk: ${riskAssessment.reasons.join(", ")}`,
+          );
+        }
+      } catch (error) {
+        console.error("AI fraud detection error:", error);
+        // Continue with invoice creation but log the error
+      }
+    }
 
     const { data, error } = await supabase
       .from("invoices")
@@ -31,7 +64,9 @@ export class PaymentOrchestrator {
         id: invoiceId,
         ...invoiceData,
         expires_at: expiresAt,
-        status: "pending",
+        status: riskAssessment?.requiresManualReview
+          ? "pending_review"
+          : "pending",
       })
       .select()
       .single();
@@ -40,7 +75,7 @@ export class PaymentOrchestrator {
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
 
-    return data as Invoice;
+    return { ...(data as Invoice), riskAssessment };
   }
 
   // Generate payment address for invoice
