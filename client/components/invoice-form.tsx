@@ -384,17 +384,19 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 pt-4">
+            <div className="flex justify-between mt-8">
               <QpayButton variant="outline" type="button" onClick={onClose}>
                 Cancel
               </QpayButton>
               <QpayButton
                 variant="primary"
                 type="submit"
-                loading={loading}
+                loading={isSubmitting}
+                disabled={!isValid || isSubmitting}
                 glow
               >
-                Create Invoice
+                <Shield className="w-4 h-4 mr-2" />
+                {isSubmitting ? "Creating..." : "Create Invoice"}
               </QpayButton>
             </div>
           </form>
