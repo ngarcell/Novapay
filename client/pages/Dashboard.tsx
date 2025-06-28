@@ -138,20 +138,27 @@ const Dashboard = () => {
 
   const handleViewInvoice = (invoice: any) => {
     setSelectedInvoice(invoice);
-    // Could open a detailed view modal
+    alert(
+      `Viewing invoice ${invoice.id}\nAmount: ${invoice.currency} ${invoice.amount}\nStatus: ${invoice.status}\nCustomer: ${invoice.customerName}`,
+    );
   };
 
   const handleEditInvoice = (invoice: any) => {
-    // Implementation for editing invoice
+    alert(
+      `Edit functionality for invoice ${invoice.id} - This would open an edit form`,
+    );
     console.log("Edit invoice:", invoice.id);
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.id === invoiceId ? { ...inv, status: "cancelled" as const } : inv,
-      ),
-    );
+    if (confirm(`Are you sure you want to cancel invoice ${invoiceId}?`)) {
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === invoiceId ? { ...inv, status: "cancelled" as const } : inv,
+        ),
+      );
+      alert(`Invoice ${invoiceId} has been cancelled`);
+    }
   };
 
   const handleGenerateQR = (invoice: any) => {
