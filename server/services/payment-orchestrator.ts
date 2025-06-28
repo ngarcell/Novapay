@@ -104,7 +104,7 @@ export class PaymentOrchestrator {
     return paymentAddress;
   }
 
-  // Monitor payment for invoice
+  // Monitor payment for invoice with AI double-spend detection
   async monitorPayment(invoiceId: string): Promise<void> {
     const { data: invoice, error } = await supabase
       .from("invoices")
@@ -121,7 +121,6 @@ export class PaymentOrchestrator {
     }
 
     // Start monitoring based on expected crypto type
-    // This would typically be determined by the invoice or payment context
     const cryptoCurrency = "BTC"; // This should be determined from context
 
     const monitorResult =
@@ -135,13 +134,37 @@ export class PaymentOrchestrator {
             invoice.amount,
           );
 
-    if (monitorResult.status === "confirmed") {
-      await this.processPayment(invoiceId, {
+    if (monitorResult.txHash) {
+      // AI Double-Spend Detection
+      await aiDoubleSpendDetection.startMonitoring(
+        monitorResult.txHash,
+        invoiceId,
+        invoice.amount,
+        invoice.payment_address,
         cryptoCurrency,
-        cryptoAmount: monitorResult.amount,
-        transactionHash: monitorResult.txHash,
-        confirmations: monitorResult.confirmations,
-      });
+      );
+
+      // Check for double-spend risks
+      const doubleSpendStatus =
+        await aiDoubleSpendDetection.getTransactionStatus(monitorResult.txHash);
+
+      // Only proceed if transaction is safe
+      if (
+        doubleSpendStatus.safeToAccept &&
+        monitorResult.status === "confirmed"
+      ) {
+        await this.processPayment(invoiceId, {
+          cryptoCurrency,
+          cryptoAmount: monitorResult.amount,
+          transactionHash: monitorResult.txHash,
+          confirmations: monitorResult.confirmations,
+        });
+      } else {
+        console.log(
+          `Transaction ${monitorResult.txHash} not safe to accept yet. Alerts:`,
+          doubleSpendStatus.alerts,
+        );
+      }
     }
   }
 
