@@ -366,6 +366,11 @@ const Dashboard = () => {
             </Card>
           </div>
 
+          {/* AI Security & Optimization Dashboard */}
+          <div className="mb-8">
+            <AIDashboard />
+          </div>
+
           {/* Analytics Chart */}
           <div className="mb-8">
             <AnalyticsChart />
