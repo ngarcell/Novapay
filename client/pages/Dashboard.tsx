@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navigation from "../components/navigation";
+import InvoiceForm from "../components/invoice-form";
+import InvoiceTable from "../components/invoice-table";
+import QRModal from "../components/qr-modal";
 import { QpayButton } from "../components/ui/qpay-button";
 import {
   Card,
@@ -20,6 +24,8 @@ import {
   ArrowUpRight,
   Copy,
   QrCode,
+  FileText,
+  Bell,
 } from "lucide-react";
 
 const Dashboard = () => {
