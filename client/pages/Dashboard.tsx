@@ -223,7 +223,92 @@ const Dashboard = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            {/* Quick Actions */}
+            <Card className="glass-card border-white/10">
+              <CardHeader>
+                <CardTitle className="text-xl">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <QpayButton
+                    variant="glass"
+                    className="h-16 flex-col space-y-1"
+                    onClick={() => setShowInvoiceForm(true)}
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs">New Invoice</span>
+                  </QpayButton>
+                  <QpayButton
+                    variant="glass"
+                    className="h-16 flex-col space-y-1"
+                  >
+                    <Bitcoin className="w-5 h-5" />
+                    <span className="text-xs">Rates</span>
+                  </QpayButton>
+                  <QpayButton
+                    variant="glass"
+                    className="h-16 flex-col space-y-1"
+                  >
+                    <Wallet className="w-5 h-5" />
+                    <span className="text-xs">Wallet</span>
+                  </QpayButton>
+                  <Link to="/settings">
+                    <QpayButton
+                      variant="glass"
+                      className="h-16 flex-col space-y-1 w-full"
+                    >
+                      <Settings className="w-5 h-5" />
+                      <span className="text-xs">Settings</span>
+                    </QpayButton>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity */}
+            <Card className="glass-card border-white/10">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl">Recent Activity</CardTitle>
+                <Bell className="w-5 h-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {invoices.slice(0, 4).map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/5 border border-white/5"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground text-sm">
+                            {invoice.id}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            ${invoice.amount}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          invoice.status === "paid"
+                            ? "bg-qpay-success/10 text-qpay-success"
+                            : invoice.status === "pending"
+                              ? "bg-qpay-warning/10 text-qpay-warning"
+                              : "bg-gray-500/10 text-gray-500"
+                        }`}
+                      >
+                        {invoice.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Stores Management */}
             <Card className="glass-card border-white/10">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -234,27 +319,27 @@ const Dashboard = () => {
                 </QpayButton>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {stores.map((store) => (
                     <div
                       key={store.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/5 border border-white/5"
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/5 border border-white/5"
                     >
                       <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-lg bg-primary/10">
-                          <Store className="w-5 h-5 text-primary" />
+                          <Store className="w-4 h-4 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground">
+                          <h3 className="font-medium text-foreground text-sm">
                             {store.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {store.transactions} transactions
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-foreground">
+                        <p className="font-semibold text-foreground text-sm">
                           {store.monthlyVolume}
                         </p>
                         <span className="text-xs bg-qpay-success/10 text-qpay-success px-2 py-1 rounded-full">
@@ -263,45 +348,6 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="glass-card border-white/10">
-              <CardHeader>
-                <CardTitle className="text-xl">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <QpayButton
-                    variant="glass"
-                    className="h-20 flex-col space-y-2"
-                  >
-                    <QrCode className="w-6 h-6" />
-                    <span className="text-sm">Generate QR</span>
-                  </QpayButton>
-                  <QpayButton
-                    variant="glass"
-                    className="h-20 flex-col space-y-2"
-                  >
-                    <Bitcoin className="w-6 h-6" />
-                    <span className="text-sm">Check Rates</span>
-                  </QpayButton>
-                  <QpayButton
-                    variant="glass"
-                    className="h-20 flex-col space-y-2"
-                  >
-                    <Wallet className="w-6 h-6" />
-                    <span className="text-sm">Wallet</span>
-                  </QpayButton>
-                  <QpayButton
-                    variant="glass"
-                    className="h-20 flex-col space-y-2"
-                  >
-                    <Settings className="w-6 h-6" />
-                    <span className="text-sm">Settings</span>
-                  </QpayButton>
                 </div>
               </CardContent>
             </Card>
