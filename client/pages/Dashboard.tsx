@@ -396,6 +396,24 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Modals */}
+      {showInvoiceForm && (
+        <InvoiceForm
+          onClose={() => setShowInvoiceForm(false)}
+          onSubmit={handleCreateInvoice}
+        />
+      )}
+
+      {showQRModal && selectedInvoice && (
+        <QRModal
+          invoice={selectedInvoice}
+          onClose={() => {
+            setShowQRModal(false);
+            setSelectedInvoice(null);
+          }}
+        />
+      )}
     </div>
   );
 };
