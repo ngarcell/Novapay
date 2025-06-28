@@ -13,6 +13,7 @@ import {
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,8 @@ const Login = () => {
     // Simulate login
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setLoading(false);
-    // Handle login logic here
+    // Navigate to dashboard after successful login
+    navigate("/dashboard");
   };
 
   return (
