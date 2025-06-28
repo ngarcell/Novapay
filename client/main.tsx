@@ -6,6 +6,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { envConfig, secureLog } from "@/lib/env-config";
+import { CSRFTokenManager } from "@/lib/secure-api";
 import Index from "./pages/Index";
 import MerchantOnboarding from "./pages/MerchantOnboarding";
 import Login from "./pages/Login";
