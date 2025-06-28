@@ -121,33 +121,6 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
     { id: "store3", name: "Mobile Store" },
   ];
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const newInvoice = {
-      id: `INV-${Date.now()}`,
-      ...formData,
-      amount: parseFloat(formData.amount),
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(
-        Date.now() + parseInt(formData.expiryDuration) * 60 * 60 * 1000,
-      ).toISOString(),
-    };
-
-    setLoading(false);
-    onSubmit?.(newInvoice);
-    onClose?.();
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="glass-card border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
