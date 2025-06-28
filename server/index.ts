@@ -60,6 +60,18 @@ export function createServer() {
   // Utility APIs
   app.post("/api/mpesa/validate", validateMpesaNumber);
 
+  // AI Services endpoints
+  app.post("/api/ai/fraud/analyze", analyzeFraudRisk);
+  app.get("/api/ai/fraud/insights/:merchantId", getFraudInsights);
+  app.post("/api/ai/double-spend/monitor", monitorDoubleSpend);
+  app.get("/api/ai/double-spend/status/:transactionHash", getDoubleSpendStatus);
+  app.get("/api/ai/double-spend/dashboard", getDoubleSpendDashboard);
+  app.post("/api/ai/exchange/optimize", optimizeExchangeRate);
+  app.get("/api/ai/exchange/predict/:currency", predictExchangeRates);
+  app.post("/api/ai/exchange/schedule", scheduleOptimalConversion);
+  app.get("/api/ai/exchange/monitoring", getExchangeMonitoring);
+  app.get("/api/ai/dashboard/:merchantId", getAIDashboardData);
+
   // Webhook endpoints
   app.post("/api/webhooks/mpesa", mpesaWebhook);
   app.post("/api/webhooks/yellowcard", yellowcardWebhook);
