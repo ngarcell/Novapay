@@ -295,10 +295,7 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
             {/* Store Selection */}
             <div>
               <Label htmlFor="store">Store</Label>
-              <Select
-                value={formData.store}
-                onValueChange={(value) => handleInputChange("store", value)}
-              >
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a store" />
                 </SelectTrigger>
