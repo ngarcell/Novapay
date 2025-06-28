@@ -330,6 +330,11 @@ const Dashboard = () => {
             </Card>
           </div>
 
+          {/* Analytics Chart */}
+          <div className="mb-8">
+            <AnalyticsChart />
+          </div>
+
           {/* Invoice Management */}
           <InvoiceTable
             invoices={invoices}
