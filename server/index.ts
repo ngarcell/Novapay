@@ -31,5 +31,27 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
+  // Payment API routes
+  app.post("/api/invoices", createInvoice);
+  app.get("/api/invoices/:invoiceId", getInvoice);
+  app.post("/api/invoices/:invoiceId/address", generatePaymentAddress);
+  app.post("/api/invoices/:invoiceId/monitor", monitorPayment);
+
+  // Crypto and exchange rate APIs
+  app.get("/api/crypto/prices", getCryptoPrices);
+  app.get("/api/exchange/rates", getExchangeRates);
+  app.post("/api/exchange/calculate", calculateKESAmount);
+
+  // Merchant analytics
+  app.get("/api/merchants/:merchantId/analytics", getMerchantAnalytics);
+
+  // Utility APIs
+  app.post("/api/mpesa/validate", validateMpesaNumber);
+
+  // Webhook endpoints
+  app.post("/api/webhooks/mpesa", mpesaWebhook);
+  app.post("/api/webhooks/yellowcard", yellowcardWebhook);
+  app.post("/api/webhooks/nownodes", nownodesWebhook);
+
   return app;
 }
