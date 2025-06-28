@@ -17,7 +17,12 @@ import {
   Smartphone,
   Bitcoin,
   X,
+  Shield,
+  AlertTriangle,
 } from "lucide-react";
+import { useSecureForm, SecureFormSchemas } from "@/hooks/use-secure-form";
+import { secureAPI, SecurityLogger } from "@/lib/secure-api";
+import { Alert, AlertDescription } from "./ui/alert";
 
 interface InvoiceFormProps {
   onClose?: () => void;
