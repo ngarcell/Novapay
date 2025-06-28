@@ -225,17 +225,29 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
 
             {/* Description */}
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">
+                Description <span className="text-red-500">*</span>
+              </Label>
               <textarea
                 id="description"
-                className="w-full p-3 rounded-lg border border-input bg-background min-h-[80px]"
+                className={`w-full p-3 rounded-lg border bg-background min-h-[80px] ${
+                  errors.description && touched.description
+                    ? "border-red-500"
+                    : "border-input"
+                }`}
                 placeholder="Payment for products/services..."
-                value={formData.description}
-                onChange={(e) =>
-                  handleInputChange("description", e.target.value)
-                }
+                {...getFieldProps("description")}
+                maxLength={500}
                 required
               />
+              <div className="flex justify-between mt-1">
+                {errors.description && touched.description && (
+                  <p className="text-red-500 text-sm">{errors.description}</p>
+                )}
+                <p className="text-muted-foreground text-xs ml-auto">
+                  {values.description.length}/500 characters
+                </p>
+              </div>
             </div>
 
             {/* Customer Information */}
