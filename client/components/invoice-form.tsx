@@ -30,18 +30,90 @@ interface InvoiceFormProps {
 }
 
 const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
-  const [formData, setFormData] = useState({
-    amount: "",
-    currency: "USD",
-    description: "",
-    customerEmail: "",
-    customerName: "",
-    store: "",
-    settlementPreference: "mpesa",
-    expiryDuration: "24",
-    reference: "",
+  const [selectedStore, setSelectedStore] = useState("");
+  const [selectedSettlement, setSelectedSettlement] = useState("mpesa");
+  const [selectedExpiry, setSelectedExpiry] = useState("24");
+
+  // Initialize secure form with validation
+  const {
+    getFieldProps,
+    handleSubmit,
+    isSubmitting,
+    isValid,
+    submitError,
+    errors,
+    touched,
+    values,
+    remainingSubmissions,
+  } = useSecureForm({
+    initialValues: {
+      amount: "",
+      currency: "USD",
+      description: "",
+      customerEmail: "",
+      customerName: "",
+      reference: "",
+    },
+    validationSchema: {
+      amount: SecureFormSchemas.invoiceForm.amount,
+      description: SecureFormSchemas.invoiceForm.description,
+      customerEmail: (value: string) =>
+        value ? SecureFormSchemas.invoiceForm.customerEmail(value) : value,
+      customerName: (value: string) =>
+        value ? SecureFormSchemas.invoiceForm.customerName(value) : value,
+    },
+    onSubmit: async (secureValues) => {
+      try {
+        // Log security event
+        SecurityLogger.logSecurityEvent("invoice_creation_attempt", {
+          amount: secureValues.amount,
+          hasCustomerInfo: !!(
+            secureValues.customerEmail || secureValues.customerName
+          ),
+        });
+
+        const invoiceData = {
+          ...secureValues,
+          amount: parseFloat(secureValues.amount),
+          store: selectedStore,
+          settlementPreference: selectedSettlement,
+          expiryDuration: selectedExpiry,
+        };
+
+        // Create invoice through secure API
+        const response = await secureAPI.post("/invoices", {
+          merchant_id: "merchant_1", // This would come from auth context
+          ...invoiceData,
+          expires_in_hours: parseInt(selectedExpiry),
+        });
+
+        const newInvoice = {
+          id: response.invoice?.id || `INV-${Date.now()}`,
+          ...invoiceData,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(
+            Date.now() + parseInt(selectedExpiry) * 60 * 60 * 1000,
+          ).toISOString(),
+        };
+
+        onSubmit?.(newInvoice);
+        onClose?.();
+
+        SecurityLogger.logSecurityEvent("invoice_created_successfully", {
+          invoiceId: newInvoice.id,
+        });
+      } catch (error) {
+        SecurityLogger.logSecurityEvent("invoice_creation_failed", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        throw error;
+      }
+    },
+    rateLimitKey: "invoice_creation",
+    maxSubmissions: 10,
+    submissionWindow: 300000, // 5 minutes
   });
-  const [loading, setLoading] = useState(false);
 
   const stores = [
     { id: "store1", name: "Main Store" },
