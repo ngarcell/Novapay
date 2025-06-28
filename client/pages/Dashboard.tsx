@@ -353,54 +353,14 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Recent Transactions */}
-          <Card className="glass-card border-white/10">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl">Recent Transactions</CardTitle>
-              <QpayButton variant="ghost" size="sm">
-                View All
-                <ArrowUpRight className="w-4 h-4 ml-2" />
-              </QpayButton>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentTransactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/5 border border-white/5"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Bitcoin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {transaction.id}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {transaction.crypto} • {transaction.time}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        {transaction.amount}
-                      </p>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          transaction.status === "completed"
-                            ? "bg-qpay-success/10 text-qpay-success"
-                            : "bg-qpay-warning/10 text-qpay-warning"
-                        }`}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Invoice Management */}
+          <InvoiceTable
+            invoices={invoices}
+            onView={handleViewInvoice}
+            onEdit={handleEditInvoice}
+            onDelete={handleDeleteInvoice}
+            onGenerateQR={handleGenerateQR}
+          />
 
           {/* Integration Guide */}
           <Card className="glass-card border-white/10 mt-8">
