@@ -179,10 +179,8 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
               <div>
                 <Label htmlFor="currency">Currency</Label>
                 <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    handleInputChange("currency", value)
-                  }
+                  value={values.currency}
+                  onValueChange={(value) => setFieldValue("currency", value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
