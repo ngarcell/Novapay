@@ -103,8 +103,8 @@ const OnboardingForm = () => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setLoading(false);
-    // Handle success
-    alert("Application submitted successfully!");
+    // Navigate to dashboard after successful submission
+    navigate("/dashboard");
   };
 
   const renderStepContent = () => {
