@@ -57,6 +57,12 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
     },
     validationSchema: {
       amount: SecureFormSchemas.invoiceForm.amount,
+      currency: (value: string) => {
+        if (!["USD", "KES", "EUR"].includes(value)) {
+          throw new Error("Invalid currency");
+        }
+        return value;
+      },
       description: SecureFormSchemas.invoiceForm.description,
       customerEmail: (value: string) =>
         value ? SecureFormSchemas.invoiceForm.customerEmail(value) : value,
