@@ -357,10 +357,8 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
               <div>
                 <Label htmlFor="expiryDuration">Expires In (Hours)</Label>
                 <Select
-                  value={formData.expiryDuration}
-                  onValueChange={(value) =>
-                    handleInputChange("expiryDuration", value)
-                  }
+                  value={selectedExpiry}
+                  onValueChange={setSelectedExpiry}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -379,10 +377,8 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                 <Input
                   id="reference"
                   placeholder="Order #12345"
-                  value={formData.reference}
-                  onChange={(e) =>
-                    handleInputChange("reference", e.target.value)
-                  }
+                  {...getFieldProps("reference")}
+                  maxLength={50}
                 />
               </div>
             </div>
