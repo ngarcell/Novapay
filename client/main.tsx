@@ -16,14 +16,66 @@ import Settings from "./pages/Settings";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on security-related errors
+        if (error instanceof Error && error.message.includes("Rate limit")) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+// Initialize security configuration
+const initializeSecurity = () => {
+  // Generate initial CSRF token
+  CSRFTokenManager.generateToken();
+
+  // Log security initialization
+  secureLog("info", "Security configuration initialized", {
+    environment: envConfig.environment,
+    features: envConfig.features,
+  });
+
+  // Setup session timeout
+  let sessionTimeout: NodeJS.Timeout;
+  const resetSessionTimeout = () => {
+    clearTimeout(sessionTimeout);
+    sessionTimeout = setTimeout(() => {
+      secureLog("warn", "Session timeout reached");
+      // Clear sensitive data and redirect to login
+      sessionStorage.clear();
+      window.location.href = "/login";
+    }, envConfig.limits.sessionTimeout);
+  };
+
+  // Reset timeout on user activity
+  ["mousedown", "mousemove", "keypress", "scroll", "touchstart"].forEach(
+    (event) => {
+      document.addEventListener(event, resetSessionTimeout, true);
+    }
+  );
+
+  resetSessionTimeout();
+};
+
+const App = () => {
+  // Initialize security on app start
+  React.useEffect(() => {
+    initializeSecurity();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/onboarding" element={<MerchantOnboarding />} />
