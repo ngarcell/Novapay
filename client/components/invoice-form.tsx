@@ -257,11 +257,19 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                 <Input
                   id="customerName"
                   placeholder="John Doe"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    handleInputChange("customerName", e.target.value)
+                  {...getFieldProps("customerName")}
+                  className={
+                    errors.customerName && touched.customerName
+                      ? "border-red-500"
+                      : "border-input"
                   }
+                  maxLength={100}
                 />
+                {errors.customerName && touched.customerName && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.customerName}
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="customerEmail">Customer Email</Label>
@@ -269,11 +277,18 @@ const InvoiceForm = ({ onClose, onSubmit }: InvoiceFormProps) => {
                   id="customerEmail"
                   type="email"
                   placeholder="customer@example.com"
-                  value={formData.customerEmail}
-                  onChange={(e) =>
-                    handleInputChange("customerEmail", e.target.value)
+                  {...getFieldProps("customerEmail")}
+                  className={
+                    errors.customerEmail && touched.customerEmail
+                      ? "border-red-500"
+                      : "border-input"
                   }
                 />
+                {errors.customerEmail && touched.customerEmail && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.customerEmail}
+                  </p>
+                )}
               </div>
             </div>
 
